@@ -1,0 +1,92 @@
+import numpy as np
+from itertools import islice
+import pandas as pd
+
+#author:zibo wu
+#e-mail:zbwu1996@gmail.com
+
+
+def rotation(axis,angle,vector):
+    #Rodrigues_rotation_formula, 
+    angle = np.radians(angle)
+    axis=np.array(axis) / np.linalg.norm(axis)
+    vector = np.array(vector) / np.linalg.norm(vector)
+    V_rot = np.cos(angle) * vector + (1-np.cos(angle))* \
+    np.dot(axis,vector) * axis + np.sin(angle) * np.cross(axis,vector)
+    return(V_rot)
+
+def test():
+    q1 = np.subtract(atom2,atom1)
+    q2 = np.subtract(atom3,atom2)
+    u1 = rotation(np.cross(q1,q2),angle,q1)
+    u2 = rotation(q1,-dihedral,u1) *distance +np.array(atom1)
+    return(u2)
+#atom atom1 distance atom2 angle atom3 dihedral 0
+
+def matrix_xyz(path,savepath):
+    with open(path,'r') as zma:
+        Z_martrix = []
+        for n,line in enumerate(zma.readlines()):
+            if line.lstrip()[0:2] == 'B1':
+                break 
+            elif line.isspace():
+                continue
+            else:
+                Z_martrix.append(line.split())
+    N_atom = len(Z_martrix)
+    with open(path,'r') as zma:
+        dict_value = {}
+        for index, line in enumerate(islice(zma, n,None)):
+            dict_value[line.split()[0]] = float(line.split()[1])
+
+
+    dict_xyz=[]
+    for i in range(1,N_atom+1):
+        if i == 1:
+            xyz=[0.000000,0.000000,0.000000]
+            elem=Z_martrix[i-1][0]
+            xyz.insert(0,elem)
+            dict_xyz.append(xyz)
+        elif i == 2: 
+            distance = dict_value[Z_martrix[i-1][2]]
+            xyz = [0.00000,0.000000,distance]
+            elem=Z_martrix[i-1][0]
+            xyz.insert(0,elem)
+            dict_xyz.append(xyz)
+        elif i == 3 :
+            elem=Z_martrix[i-1][0]
+            atom1,atom2 = Z_martrix[i-1][1::2]
+            distance,angle=Z_martrix[i-1][2::2]
+            atom1=dict_xyz[int(atom1) -1][1:]
+            atom2=dict_xyz[int(atom2) -1][1:]
+            distance=dict_value[distance]
+            angle = dict_value[angle]
+            xyz = list(np.array(atom1)- rotation([0,1,0],-angle,np.subtract(atom1,atom2))*distance)
+            xyz.insert(0,elem)
+            dict_xyz.append(xyz)
+        else:
+            elem=Z_martrix[i-1][0]
+            atom1, atom2,atom3 = Z_martrix[i-1][1:-1:2]
+            distance,angle,dihedral=Z_martrix[i-1][2:-1:2]
+            distance =dict_value[distance]
+            angle = dict_value[angle]
+            dihedral = dict_value[dihedral]
+            atom1=dict_xyz[int(atom1) -1][1:]
+            atom2=dict_xyz[int(atom2) -1][1:]
+            atom3=dict_xyz[int(atom3) -1][1:]
+            xyz=list(test())
+            xyz.insert(0,elem)
+            dict_xyz.append(xyz)
+    #save_file
+    matrix_xyz = np.array(dict_xyz)
+    matrix_xyz = np.delete(matrix_xyz,0,axis=0)
+    matrix_xyz= pd.DataFrame(matrix_xyz)
+    print(matrix_xyz)
+    matrix_xyz.to_csv(savepath,sep="\t",index=False,header=False)
+
+    
+    
+if __name__=='__main__':
+    path = 'zmatrix.txt'
+    savepath = 'matrix_xyz.txt'    
+    matrix_xyz(path,savepath)
