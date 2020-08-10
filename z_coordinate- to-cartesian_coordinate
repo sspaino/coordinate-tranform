@@ -2,6 +2,8 @@ import numpy as np
 from itertools import islice
 import pandas as pd
 
+
+#this code can tranform z-coordinate to cartesian-coordinate
 #author:zibo wu
 #e-mail:zbwu1996@gmail.com
 
